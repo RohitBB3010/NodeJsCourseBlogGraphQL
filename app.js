@@ -4,9 +4,6 @@ const mongoose = require('mongoose');
 const path = require('path');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
-
-const feedRoutes = require('./routes/feed');
-const authRoutes = require('./routes/auth');
 const exp = require('constants');
 
 const app = express();
@@ -42,15 +39,8 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/feeds', feedRoutes);
-app.use('/auth', authRoutes);
-
 mongoose.connect('mongodb+srv://rohit:Rohit123%40@cluster0.ha5sq.mongodb.net/messages?&w=majority&appName=Cluster0').then(result => {
-    const server = app.listen(8080);
-    const io = require('./socket').init(server);
-    io.on('connection', socket => {
-        console.log('Client connected');
-    })
+    app.listen(8080);
 }).catch(err => {
     console.log(err);
 })
