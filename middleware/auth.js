@@ -4,9 +4,11 @@ module.exports = (req, res, next) => {
 
     const authHeader = req.get('Authorization');
 
+    console.log("Incoming headers:", JSON.stringify(req.headers, null, 2));
+
     if(!authHeader){
-        const error = new Error('Not authorized');
-        throw err;
+        req.isAuth = false;
+        return next();
     }
 
     const token = authHeader.split(' ')[1];
@@ -15,18 +17,16 @@ module.exports = (req, res, next) => {
     try{
         decodedToken = jwt.verify(token, 'somesupersupersecretkey');
     } catch(err) {
-        err.statusode = 500;
-        throw err;
+        req.isAuth = false;
+        return next();
     }
 
     if(!decodedToken){
-        const error = new Error('Not authenticated');
-        error.statusode = 401;
-        throw err;
+        req.isAuth = false;
+        return next();
     }
 
-    console.log("Decoded token is:" + decodedToken);
-
     req.userId = decodedToken.userId;
+    req.isAuth = true;
     next();
 }

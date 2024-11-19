@@ -65,8 +65,14 @@ module.exports = {
     return { token : token, userId : user._id.toString() }
     },
     createPost : async function ({postInput}, req) {
-
+        
         console.log("Function executed");
+        
+        if(!req.isAuth){
+            const error = new Error('User not authenticated');
+            error.code = 401;
+            throw error;
+        }
 
         const errors = [];
 
@@ -78,8 +84,6 @@ module.exports = {
             errors.push({message : 'Content is invalid'});
         }
 
-        console.log(errors);
-
         if(errors.length > 0){
             const error = new Error('Invalid input');
             error.data = errors;
@@ -87,13 +91,24 @@ module.exports = {
             throw error;
         }
 
+        const user = await User.findById(req.userId);
+
+        if(!user){
+            const error = new Error('Not valid user');
+            error.code = 401;
+            throw error;
+        }
+
         const post = new Post({
             title : postInput.title,
             content : postInput.content,
-            imageUrl : postInput.imageUrl
+            imageUrl : postInput.imageUrl,
+            creator : user
         });
 
         const createdPost = await post.save();
+        user.posts.push(createdPost);
+        await user.save();
 
         return {...createdPost._doc, _id : createdPost._id.toString(), createdAt : createdPost.createdAt.toISOString(), updatedAt : createdPost.updatedAt.toISOString()}
     }

@@ -9,8 +9,7 @@ const { createHandler } = require('graphql-http/lib/use/express');
 const exp = require('constants');
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
-const schema = require('./graphql/schema');
-const resolvers = require('./graphql/resolvers');
+const authMiddleware = require('./middleware/auth');
 
 const app = express();
 
@@ -79,9 +78,25 @@ app.use(multer({
     storage:fileStorage, fileFilter:fileFilter
 }).single('image'));
 
+app.use(authMiddleware);
+
 app.use('/graphql', createHandler({
     schema : graphqlSchema,
     rootValue : graphqlResolver,
+    context: (req, res) => {
+      return {
+        isAuth: req.raw.isAuth,
+        userId: req.raw.userId,
+      };
+    },
+    formatError(err) {
+      if (!err.originalError) return err;
+      const data = err.originalError.data;
+      const message = err.message || "Something went wrong.";
+      const statusCode = err.originalError.statusCode || 500;
+ 
+      return { message, statusCode, data };
+    },
 }));
 
 mongoose.connect('mongodb+srv://rohit:Rohit123%40@cluster0.ha5sq.mongodb.net/messages?&w=majority&appName=Cluster0').then(result => {
