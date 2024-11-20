@@ -38,8 +38,6 @@ module.exports = {
     },
     login : async function({email, password}){
         
-        console.log("Inside function");
-        
         const user = await User.findOne({email : email});
         if(!user){
             const error = new Error('No user found');
@@ -65,8 +63,6 @@ module.exports = {
     return { token : token, userId : user._id.toString() }
     },
     createPost : async function ({postInput}, req) {
-        
-        console.log("Function executed");
         
         if(!req.isAuth){
             const error = new Error('User not authenticated');
@@ -111,5 +107,29 @@ module.exports = {
         await user.save();
 
         return {...createdPost._doc, _id : createdPost._id.toString(), createdAt : createdPost.createdAt.toISOString(), updatedAt : createdPost.updatedAt.toISOString()}
+    },
+    posts : async function (args, req) {
+
+        if(!req.isAuth){
+            const error = new Error('User not authenticated');
+            error.code = 401;
+            throw error;
+        }
+
+        const totalDocuments = await Post.countDocuments();
+
+        const posts = await Post.find().sort({createdAt :  -1 }).populate('creator');
+
+        return {
+            posts : posts.map(p => {
+                return {
+                    ...p._doc,
+                    _id : p._id.toString(),
+                    createdAt : p.createdAt.toISOString(),
+                    updatedAt : p.updatedAt.toISOString()
+                }
+            }),
+            totalPosts : totalDocuments
+        }
     }
 }

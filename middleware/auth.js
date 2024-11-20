@@ -4,8 +4,6 @@ module.exports = (req, res, next) => {
 
     const authHeader = req.get('Authorization');
 
-    console.log("Incoming headers:", JSON.stringify(req.headers, null, 2));
-
     if(!authHeader){
         req.isAuth = false;
         return next();

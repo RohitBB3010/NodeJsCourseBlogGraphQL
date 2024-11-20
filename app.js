@@ -10,6 +10,7 @@ const exp = require('constants');
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
 const authMiddleware = require('./middleware/auth');
+const clearImage = require('./util/image_clear');
 
 const app = express();
 
@@ -79,6 +80,28 @@ app.use(multer({
 }).single('image'));
 
 app.use(authMiddleware);
+
+app.use('/post-image', (req, res, next) => {
+
+  console.log("Request at image middleware");
+  if(!req.isAuth){
+    const error = new Error('No user found');
+    error.code = 422;
+    throw error;
+  }
+
+  if(!req.file){
+    return res.status(200).json({message : 'No file provided'});
+  }
+
+  if(req.body.oldPath){
+    clearImage(req.body.oldPath);
+  }
+
+  console.log(req.file.path);
+
+  return res.status(201).json({message : 'File stored', filePath :  req.file.path.replace(/\\/g, "/")});
+});
 
 app.use('/graphql', createHandler({
     schema : graphqlSchema,
